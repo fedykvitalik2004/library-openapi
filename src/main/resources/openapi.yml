@@ -133,7 +133,6 @@ paths:
       tags:
         - User
       operationId: findBorrowedBooks
-      x-spring-paginated: true
       parameters:
         - name: userId
           required: true
@@ -186,7 +185,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ReadAuthorDtos'
+                $ref: '#/components/schemas/PageOfAuthors'
   /authors/{id}:
     parameters:
       - name: id
@@ -282,25 +281,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateBookDto'
+                $ref: '#/components/schemas/ReadBookDto'
         '400':
           description: Invalid input data
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExceptionMessage'
-    get:
-      summary: Get all books
-      operationId: getAllBooks
-      tags:
-        - Book
-      responses:
-        '200':
-          description: All books retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ReadBookDtos"
   /books/search:
     parameters:
       - name: query
@@ -323,7 +310,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ReadAuthorDto'
+                $ref: '#/components/schemas/ReadBookDtos'
   /books/{id}:
     parameters:
       - name: id
@@ -345,7 +332,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ReadAuthorDto'
+                $ref: '#/components/schemas/ReadBookDto'
         '404':
           description: Author not found
           content:
@@ -446,6 +433,7 @@ paths:
           description: "The ID of the book to delete."
           schema:
             type: integer
+            format: int64
             example: 123
         - name: userId
           in: path
@@ -453,6 +441,7 @@ paths:
           description: "The ID of the user who borrowed the book."
           schema:
             type: integer
+            format: int64
             example: 456
       responses:
         '204':
@@ -559,7 +548,7 @@ components:
         description:
           type: string
     ReadAuthorDtos:
-      type: array
+      type: object
       items:
         $ref: "#/components/schemas/ReadAuthorDto"
     CreateBookDto:
@@ -671,6 +660,62 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/ReadBorrowedBookDto'
+    BasePage:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        first:
+          type: boolean
+        last:
+          type: boolean
+        number:
+          type: integer
+        numberOfElements:
+          type: integer
+        pageable:
+          type: object
+        size:
+          type: integer
+        sort:
+          type: object
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - empty
+        - first
+        - last
+        - number
+        - numberOfElements
+        - pageable
+        - size
+        - sort
+        - totalElements
+        - totalPages
+    PageOfAuthors:
+      allOf:
+        - $ref: '#/components/schemas/BasePage'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReadAuthorDto'
+          required:
+            - content
+    PageOfBooks:
+      allOf:
+        - $ref: '#/components/schemas/BasePage'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReadBookDto'
+          required:
+            - content
     ExceptionMessage:
       type: object
       properties:
