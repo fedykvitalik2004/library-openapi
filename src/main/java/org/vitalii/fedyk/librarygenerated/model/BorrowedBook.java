@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 import java.time.ZonedDateTime;
 
@@ -18,6 +19,7 @@ import java.time.ZonedDateTime;
 @AllArgsConstructor
 @Setter
 @Getter
+@Accessors(chain = true)
 public class BorrowedBook {
     @Id
     private Long bookId;
