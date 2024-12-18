@@ -2,12 +2,9 @@ package org.vitalii.fedyk.librarygenerated.controller;
 
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.vitalii.fedyk.librarygenerated.api.controller.UsersApi;
-import org.vitalii.fedyk.librarygenerated.api.dto.CreateUserDto;
-import org.vitalii.fedyk.librarygenerated.api.dto.ReadBorrowedBookDto;
-import org.vitalii.fedyk.librarygenerated.api.dto.ReadUserDto;
+import org.vitalii.fedyk.librarygenerated.api.dto.*;
 import org.vitalii.fedyk.librarygenerated.service.BorrowedBookService;
 import org.vitalii.fedyk.librarygenerated.service.UserService;
 
@@ -35,8 +32,8 @@ public class UserController implements UsersApi {
     }
 
     @Override
-    public List<ReadUserDto> getAllUsers(Pageable pageable) {
-        return userService.findAll(pageable).toList();
+    public ReadUsersDto getAllUsers(Pageable pageable) {
+        return userService.findAll(pageable);
     }
 
     @Override

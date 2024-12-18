@@ -7,7 +7,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.vitalii.fedyk.librarygenerated.api.dto.ExceptionMessage;
+import org.vitalii.fedyk.librarygenerated.api.dto.ExceptionMessageDto;
 
 import java.util.HashMap;
 import java.util.List;
@@ -17,25 +17,25 @@ import java.util.Map;
 public class GlobalExceptionHandler {
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ExceptionMessage handleNotFoundException(RuntimeException e) {
-        return getExceptionMessage(e);
+    public ExceptionMessageDto handleNotFoundException(RuntimeException e) {
+        return getExceptionMessageDto(e);
     }
 
     @ExceptionHandler(EmailAlreadyUsedException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ExceptionMessage handleEmailAlreadyUsedException(RuntimeException e) {
-        return getExceptionMessage(e);
+    public ExceptionMessageDto handleEmailAlreadyUsedException(RuntimeException e) {
+        return getExceptionMessageDto(e);
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
-    public ExceptionMessage handleMethodNotAllowed(RuntimeException e) {
-        return getExceptionMessage(e);
+    public ExceptionMessageDto handleMethodNotAllowed(RuntimeException e) {
+        return getExceptionMessageDto(e);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ExceptionMessage handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+    public ExceptionMessageDto handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         final BindingResult bindingResult = e.getBindingResult();
         final Map<String, Object> errorMessages = new HashMap<>();
 
@@ -44,22 +44,22 @@ public class GlobalExceptionHandler {
             errorMessages.put(fieldError.getField(), fieldError.getDefaultMessage());
         }
 
-        return getExceptionMessage(errorMessages);
+        return getExceptionMessageDto(errorMessages);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ExceptionMessage handleIllegalArgumentException(RuntimeException e) {
-        return getExceptionMessage(e);
+    public ExceptionMessageDto handleIllegalArgumentException(RuntimeException e) {
+        return getExceptionMessageDto(e);
     }
 
-    private ExceptionMessage getExceptionMessage(Exception e) {
-        final ExceptionMessage exceptionMessage = new ExceptionMessage();
+    private ExceptionMessageDto getExceptionMessageDto(Exception e) {
+        final ExceptionMessageDto exceptionMessage = new ExceptionMessageDto();
         exceptionMessage.setMessage(e.getMessage());
         return exceptionMessage;
     }
 
-    private ExceptionMessage getExceptionMessage(Map<String, Object> map) {
-        final ExceptionMessage exceptionMessage = new ExceptionMessage();
+    private ExceptionMessageDto getExceptionMessageDto(Map<String, Object> map) {
+        final ExceptionMessageDto exceptionMessage = new ExceptionMessageDto();
         exceptionMessage.additionalInfo(map);
         return exceptionMessage;
     }

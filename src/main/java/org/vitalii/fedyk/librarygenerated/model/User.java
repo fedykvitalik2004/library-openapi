@@ -3,7 +3,7 @@ package org.vitalii.fedyk.librarygenerated.model;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.Accessors;
-import org.vitalii.fedyk.librarygenerated.api.dto.FullName;
+import org.vitalii.fedyk.librarygenerated.api.dto.FullNameDto;
 
 import java.time.LocalDate;
 
@@ -19,7 +19,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Embedded
-    private FullName fullName;
+    private FullNameDto fullName;
     private String email;
     private String password;
     private LocalDate birthday;

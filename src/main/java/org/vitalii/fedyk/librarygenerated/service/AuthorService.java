@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.vitalii.fedyk.librarygenerated.api.dto.CreateAuthorDto;
 import org.vitalii.fedyk.librarygenerated.api.dto.ReadAuthorDto;
+import org.vitalii.fedyk.librarygenerated.api.dto.ReadAuthorsDto;
 
 public interface AuthorService {
     ReadAuthorDto createAuthor(CreateAuthorDto createAuthorDto);
@@ -14,5 +15,5 @@ public interface AuthorService {
 
     void deleteAuthor(Long id);
 
-    Page<ReadAuthorDto> findAll(Pageable pageable);
+    ReadAuthorsDto findAll(Pageable pageable);
 }

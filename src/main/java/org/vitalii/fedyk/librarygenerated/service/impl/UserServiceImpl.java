@@ -2,12 +2,12 @@ package org.vitalii.fedyk.librarygenerated.service.impl;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.vitalii.fedyk.librarygenerated.api.dto.CreateUserDto;
-import org.vitalii.fedyk.librarygenerated.api.dto.ReadUserDto;
+import org.vitalii.fedyk.librarygenerated.api.dto.*;
 import org.vitalii.fedyk.librarygenerated.exception.EmailAlreadyUsedException;
 import org.vitalii.fedyk.librarygenerated.exception.NotFoundException;
 import org.vitalii.fedyk.librarygenerated.exception.OperationNotPermittedException;
 import org.vitalii.fedyk.librarygenerated.mapper.UserMapper;
+import org.vitalii.fedyk.librarygenerated.model.Author;
 import org.vitalii.fedyk.librarygenerated.model.User;
 import org.vitalii.fedyk.librarygenerated.repository.UserRepository;
 import org.vitalii.fedyk.librarygenerated.service.BorrowedBookService;
@@ -66,7 +66,18 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Page<ReadUserDto> findAll(final Pageable pageable) {
-        return userRepository.findAll(pageable).map(readUserDto -> userMapper.toReadUserDto(readUserDto));
+    public ReadUsersDto findAll(final Pageable pageable) {
+        return createUsersDto(userRepository.findAll(pageable));
+    }
+
+    private ReadUsersDto createUsersDto(final Page<User> users) {
+        ReadUsersDto readUsersDto = new ReadUsersDto();
+        readUsersDto.setUsers(users.getContent().stream().map(userMapper::toReadUserDto).toList());
+        final PaginationDto paginationDto = new PaginationDto();
+        paginationDto.setPageNumber(users.getNumber());
+        paginationDto.setPageSize(users.getSize());
+        paginationDto.setTotalNumberOfPages(users.getTotalPages());
+        readUsersDto.setPagination(paginationDto);
+        return readUsersDto;
     }
 }

@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.vitalii.fedyk.librarygenerated.api.dto.BookGenre;
+import org.vitalii.fedyk.librarygenerated.api.dto.BookGenreDto;
 
 @Entity
 @Table(name = "books")
@@ -20,7 +20,7 @@ public class Book {
     private String title;
     private String description;
     @Enumerated(EnumType.STRING)
-    private BookGenre genre;
+    private BookGenreDto genre;
     private short pagesCount;
     @ManyToOne
     private Author author;

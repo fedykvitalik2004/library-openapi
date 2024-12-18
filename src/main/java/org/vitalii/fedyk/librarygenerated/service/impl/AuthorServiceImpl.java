@@ -1,7 +1,9 @@
 package org.vitalii.fedyk.librarygenerated.service.impl;
 
 import org.vitalii.fedyk.librarygenerated.api.dto.CreateAuthorDto;
+import org.vitalii.fedyk.librarygenerated.api.dto.PaginationDto;
 import org.vitalii.fedyk.librarygenerated.api.dto.ReadAuthorDto;
+import org.vitalii.fedyk.librarygenerated.api.dto.ReadAuthorsDto;
 import org.vitalii.fedyk.librarygenerated.exception.NotFoundException;
 import org.vitalii.fedyk.librarygenerated.exception.OperationNotPermittedException;
 import org.vitalii.fedyk.librarygenerated.mapper.AuthorMapper;
@@ -61,8 +63,18 @@ public class AuthorServiceImpl implements AuthorService {
     }
 
     @Override
-    public Page<ReadAuthorDto> findAll(final Pageable pageable) {
-        return authorRepository.findAll(pageable)
-                .map(authorMapper::toReadAuthorDto);
+    public ReadAuthorsDto findAll(final Pageable pageable) {
+        return createAuthorsDto(authorRepository.findAll(pageable));
+    }
+
+    private ReadAuthorsDto createAuthorsDto(final Page<Author> authors) {
+        ReadAuthorsDto readAuthorsDto = new ReadAuthorsDto();
+        readAuthorsDto.setAuthors(authors.getContent().stream().map(authorMapper::toReadAuthorDto).toList());
+        final PaginationDto paginationDto = new PaginationDto();
+        paginationDto.setPageNumber(authors.getNumber());
+        paginationDto.setPageSize(authors.getSize());
+        paginationDto.setTotalNumberOfPages(authors.getTotalPages());
+        readAuthorsDto.setPagination(paginationDto);
+        return readAuthorsDto;
     }
 }

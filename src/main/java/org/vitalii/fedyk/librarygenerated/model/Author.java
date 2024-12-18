@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.vitalii.fedyk.librarygenerated.api.dto.FullName;
+import org.vitalii.fedyk.librarygenerated.api.dto.FullNameDto;
 
 import java.util.List;
 
@@ -20,7 +20,7 @@ public class Author {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Embedded
-    private FullName fullName;
+    private FullNameDto fullName;
     private String description;
     @OneToMany(mappedBy = "author")
     private List<Book> books;
