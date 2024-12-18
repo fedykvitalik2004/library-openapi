@@ -11,7 +11,7 @@ import org.vitalii.fedyk.librarygenerated.model.User;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.vitalii.fedyk.librarygenerated.utils.Entities.*;
+import static org.vitalii.fedyk.librarygenerated.utils.Data.*;
 
 @DataJpaTest
 class BorrowedBookRepositoryTest {
@@ -28,15 +28,13 @@ class BorrowedBookRepositoryTest {
 
     @Test
     void existsByUserId() {
-        final User user = userRepository.save(getUser());
+        final User user = userRepository.save(getUser(null));
         userRepository.save(user);
-        Book book = getBook();
+        Book book = getBook(1L, 1L);
         final Author author = authorRepository.save(book.getAuthor());
         book.setAuthor(author);
         book = bookRepository.save(book);
-        BorrowedBook borrowedBook = getBorrowedBook()
-                .setBookId(book.getId())
-                .setUserId(user.getId());
+        BorrowedBook borrowedBook = getBorrowedBook(book.getId(), user.getId());
         borrowedBook = borrowedBookRepository.save(borrowedBook);
 
         assertTrue(borrowedBookRepository.existsByUserId(user.getId()));
@@ -44,15 +42,13 @@ class BorrowedBookRepositoryTest {
 
     @Test
     void existsByBookId() {
-        final User user = userRepository.save(getUser());
+        final User user = userRepository.save(getUser(null));
         userRepository.save(user);
-        Book book = getBook();
+        Book book = getBook(1L, 1L);
         final Author author = authorRepository.save(book.getAuthor());
         book.setAuthor(author);
         book = bookRepository.save(book);
-        BorrowedBook borrowedBook = getBorrowedBook()
-                .setBookId(book.getId())
-                .setUserId(user.getId());
+        BorrowedBook borrowedBook = getBorrowedBook(book.getId(), user.getId());
         borrowedBook = borrowedBookRepository.save(borrowedBook);
 
         assertTrue(borrowedBookRepository.existsByBookId(book.getId()));
@@ -60,17 +56,16 @@ class BorrowedBookRepositoryTest {
 
     @Test
     void findByUserId() {
-        final User user = userRepository.save(getUser());
+        final User user = userRepository.save(getUser(null));
         userRepository.save(user);
-        Book book = getBook();
+        Book book = getBook(1L, 1L);
         final Author author = authorRepository.save(book.getAuthor());
         book.setAuthor(author);
         book = bookRepository.save(book);
-        BorrowedBook borrowedBook = getBorrowedBook()
-                .setBookId(book.getId())
-                .setUserId(user.getId());
+        BorrowedBook borrowedBook = getBorrowedBook(book.getId(), user.getId());
         borrowedBook = borrowedBookRepository.save(borrowedBook);
 
         assertSame(borrowedBookRepository.findByUserId(user.getId()).get(0), borrowedBook);
     }
+
 }

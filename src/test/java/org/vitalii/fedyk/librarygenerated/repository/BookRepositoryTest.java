@@ -1,5 +1,6 @@
 package org.vitalii.fedyk.librarygenerated.repository;
 
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -10,9 +11,10 @@ import org.vitalii.fedyk.librarygenerated.model.Book;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.vitalii.fedyk.librarygenerated.utils.Entities.getBook;
+import static org.vitalii.fedyk.librarygenerated.utils.Data.getBook;
 
 @DataJpaTest
+@Transactional
 class BookRepositoryTest {
     @Autowired
     private BookRepository bookRepository;
@@ -22,8 +24,9 @@ class BookRepositoryTest {
     private TestEntityManager em;
 
     @Test
+    @Transactional
     void findAllByIds_shouldReturnBooksForValidIds() {
-        Book book = getBook();
+        Book book = getBook(1L, 1L);
         final Author author = authorRepository.save(book.getAuthor());
         book.setAuthor(author);
         book = bookRepository.save(book);
@@ -38,9 +41,10 @@ class BookRepositoryTest {
 
     @Test
     void existsByAuthorId_shouldReturnTrueWhenAuthorHasBooks() {
-        Book book = getBook();
-        final Author author = authorRepository.save(book.getAuthor());
-        book.setAuthor(author);
+        Book book = getBook(1L, null);
+        final Author author = book.getAuthor();
+        book.setAuthor(book.getAuthor());
+        authorRepository.save(author);
         bookRepository.save(book);
 
         assertTrue(bookRepository.existsByAuthorId(author.getId()));

@@ -6,12 +6,10 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-import org.vitalii.fedyk.librarygenerated.api.dto.FullName;
 import org.vitalii.fedyk.librarygenerated.model.User;
 
-import java.time.LocalDate;
-
 import static org.junit.jupiter.api.Assertions.*;
+import static org.vitalii.fedyk.librarygenerated.utils.Data.getUser;
 
 @DataJpaTest
 class UserRepositoryTest {
@@ -23,12 +21,7 @@ class UserRepositoryTest {
     @Test
     void existsByEmailAndIdNot_shouldReturnFalseWhenEmailMatchesAndIdIsSame() {
         final String email = "email@mail.com";
-        final User user = userRepository.save(
-                new User()
-                        .setFullName(new FullName("John", "Doe"))
-                        .setBirthday(LocalDate.of(2004, 12, 12))
-                        .setEmail(email)
-                        .setPassword("password"));
+        final User user = userRepository.save(getUser(null));
         assertFalse(userRepository.existsByEmailAndIdNot(email, user.getId()));
     }
 
@@ -38,13 +31,7 @@ class UserRepositoryTest {
             "email@mail.com,-1,true"
     })
     void existsByEmailAndIdNot_shouldReturnExpectedResultForEmailAndIdCombination(String email, Long id, boolean expected) {
-        final User user = userRepository.save(
-                new User()
-                        .setEmail("email@mail.com")
-                        .setFullName(new FullName("John", "Doe"))
-                        .setBirthday(LocalDate.of(2004, 12, 12))
-                        .setEmail(email)
-                        .setPassword("password"));
+        final User user = userRepository.save(getUser(null));
         assertEquals(expected, userRepository.existsByEmailAndIdNot(email, id));
     }
 }

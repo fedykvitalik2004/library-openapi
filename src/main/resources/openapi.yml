@@ -512,6 +512,7 @@ components:
           example: 'mail@gmail.com'
         birthday:
           type: string
+          format: date
           example: "29.03.2001"
     ReadUsers:
       type: object
@@ -542,6 +543,7 @@ components:
           example: "password123!"
         birthday:
           type: string
+          format: date
           example: "29.03.2001"
     CreateAuthor:
       type: object
@@ -592,7 +594,6 @@ components:
           $ref: '#/components/schemas/BookGenre'
         pagesCount:
           type: integer
-          format: int16
           description: Number of pages in the book.
           example: 180
         authorId:
@@ -615,7 +616,6 @@ components:
           $ref: '#/components/schemas/BookGenre'
         pagesCount:
           type: integer
-          format: int16
           description: Number of pages in the book.
           example: 180
         authorId:
@@ -639,6 +639,7 @@ components:
           $ref: '#/components/schemas/UserId'
         returnDate:
           type: string
+          format: date-time
           description: "The date when the book should be returned. Must be in the future."
           example: "2025-12-31T23:59:59Z"
     ReadBorrowedBook:
