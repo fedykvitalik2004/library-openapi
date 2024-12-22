@@ -7,7 +7,6 @@ import org.vitalii.fedyk.librarygenerated.exception.EmailAlreadyUsedException;
 import org.vitalii.fedyk.librarygenerated.exception.NotFoundException;
 import org.vitalii.fedyk.librarygenerated.exception.OperationNotPermittedException;
 import org.vitalii.fedyk.librarygenerated.mapper.UserMapper;
-import org.vitalii.fedyk.librarygenerated.model.Author;
 import org.vitalii.fedyk.librarygenerated.model.User;
 import org.vitalii.fedyk.librarygenerated.repository.UserRepository;
 import org.vitalii.fedyk.librarygenerated.service.BorrowedBookService;
@@ -26,7 +25,7 @@ import static org.vitalii.fedyk.librarygenerated.constant.ExceptionConstants.*;
 public class UserServiceImpl implements UserService {
     private UserMapper userMapper;
     private UserRepository userRepository;
-    private BorrowedBookService bookServiceImpl;
+    private BorrowedBookService borrowedBookService;
 
     @Override
     public ReadUserDto createUser(final CreateUserDto createUserDto) {
@@ -57,7 +56,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUser(final Long id) {
-        if (bookServiceImpl.isBorrowedByUser(id)) {
+        if (borrowedBookService.isBorrowedByUser(id)) {
             throw new OperationNotPermittedException(USER_CANNOT_BE_DELETED);
         }
         final User user = userRepository.findById(id)

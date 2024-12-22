@@ -25,8 +25,17 @@ public class Data {
                 ZonedDateTime.of(LocalDateTime.of(2024, 5, 28, 5, 49), ZoneId.of("UTC")));
     }
 
-    public static User getUser(Long userId) {
-        return new User(userId, new FullNameDto("John", "Doe"), "email@mail.com", "password", LocalDate.of(2024, 5, 28));
+    public static User getUser() {
+        return new User(1L, new FullNameDto("John", "Doe"), "email@mail.com", "password", LocalDate.of(2024, 5, 28));
+    }
+
+    public static ReadUserDto getReadUserDto() {
+        return new ReadUserDto()
+                .id(1L)
+                .fullName(new FullNameDto("John", "Doe"))
+                .email("email@mail.com")
+                .birthday(LocalDate.of(2024, 5, 28));
+
     }
 
     public static CreateBookDto getCreateBookDto(Long authorId) {
@@ -45,15 +54,6 @@ public class Data {
         createUserDto.setEmail("email@mail.com");
         createUserDto.setPassword("password");
         createUserDto.setBirthday(LocalDate.of(2024, 5, 28));
-        return createUserDto;
-    }
-
-    public static CreateUserDto getOtherCreateUserDto() {
-        CreateUserDto createUserDto = new CreateUserDto();
-        createUserDto.setFullName(new FullNameDto("Jane", "Doe"));
-        createUserDto.setEmail("email_jane@mail.com");
-        createUserDto.setPassword("password_changed");
-        createUserDto.setBirthday(LocalDate.of(2024, 5, 29));
         return createUserDto;
     }
 
