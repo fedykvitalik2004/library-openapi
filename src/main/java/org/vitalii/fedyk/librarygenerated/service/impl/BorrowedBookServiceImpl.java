@@ -12,6 +12,7 @@ import org.vitalii.fedyk.librarygenerated.model.BorrowedBook;
 import org.vitalii.fedyk.librarygenerated.model.BorrowedBookId;
 import org.vitalii.fedyk.librarygenerated.repository.BookRepository;
 import org.vitalii.fedyk.librarygenerated.repository.BorrowedBookRepository;
+import org.vitalii.fedyk.librarygenerated.repository.UserRepository;
 import org.vitalii.fedyk.librarygenerated.service.BorrowedBookService;
 
 import java.time.ZonedDateTime;
@@ -23,6 +24,7 @@ import static org.vitalii.fedyk.librarygenerated.constant.ExceptionConstants.*;
 @Service
 @AllArgsConstructor
 public class BorrowedBookServiceImpl implements BorrowedBookService {
+    private final UserRepository userRepository;
     private BookRepository bookRepository;
     private BorrowedBookRepository borrowedBookRepository;
     private BorrowedBookMapper borrowedBookMapper;
@@ -36,6 +38,9 @@ public class BorrowedBookServiceImpl implements BorrowedBookService {
         final BorrowedBook borrowedBook = borrowedBookMapper.toBorrowedBook(createBorrowedBookDto);
         final Book book = bookRepository.findById(createBorrowedBookDto.getBookId())
                 .orElseThrow(() -> new NotFoundException(BOOK_NOT_FOUND_BY_ID.formatted(createBorrowedBookDto.getBookId())));
+        if (!userRepository.existsById(createBorrowedBookDto.getUserId())) {
+            throw new NotFoundException(USER_NOT_FOUND_BY_ID);
+        }
         borrowedBook.setBorrowDate(ZonedDateTime.now());
         return borrowedBookMapper.toBorrowedBookDto(borrowedBookRepository.save(borrowedBook), book);
     }

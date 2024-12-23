@@ -1,6 +1,5 @@
 package org.vitalii.fedyk.librarygenerated.service;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.vitalii.fedyk.librarygenerated.api.dto.CreateAuthorDto;
 import org.vitalii.fedyk.librarygenerated.api.dto.ReadAuthorDto;

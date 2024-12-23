@@ -10,18 +10,19 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 
 public class Data {
-    public static Author getAuthor(Long authorId) {
-        return new Author(authorId, new FullNameDto("John", "Doe"), "Description", null);
+    public static Author getAuthor() {
+        return new Author(1L, new FullNameDto("John", "Doe"), "Description", new ArrayList<>());
     }
 
-    public static Book getBook(Long bookId, Long authorId) {
-        return new Book(bookId, "Title", "Description", BookGenreDto.FANTASY, (short) 100, getAuthor(authorId));
+    public static Book getBook() {
+        return new Book(2L, "Title", "Description", BookGenreDto.FANTASY, (short) 100, getAuthor());
     }
 
-    public static BorrowedBook getBorrowedBook(Long bookId, Long userId) {
-        return new BorrowedBook(bookId, userId, ZonedDateTime.of(LocalDateTime.of(2023, 1, 1, 0, 0), ZoneId.of("UTC")),
+    public static BorrowedBook getBorrowedBook() {
+        return new BorrowedBook(2L, 1L, ZonedDateTime.of(LocalDateTime.of(2023, 1, 1, 0, 0), ZoneId.of("UTC")),
                 ZonedDateTime.of(LocalDateTime.of(2024, 5, 28, 5, 49), ZoneId.of("UTC")));
     }
 
@@ -36,6 +37,12 @@ public class Data {
                 .email("email@mail.com")
                 .birthday(LocalDate.of(2024, 5, 28));
 
+    }
+
+    public static CreateAuthorDto getCreateAuthorDto() {
+        return new CreateAuthorDto()
+                .fullName(new FullNameDto("John", "Doe"))
+                .description("Description");
     }
 
     public static CreateBookDto getCreateBookDto(Long authorId) {
@@ -57,10 +64,10 @@ public class Data {
         return createUserDto;
     }
 
-    public static CreateBorrowedBookDto getCreateBorrowedBookDto(final long bookId, final long userId) {
+    public static CreateBorrowedBookDto getCreateBorrowedBookDto() {
         CreateBorrowedBookDto createBorrowedBookDto = new CreateBorrowedBookDto();
-        createBorrowedBookDto.setBookId(bookId);
-        createBorrowedBookDto.setUserId(userId);
+        createBorrowedBookDto.setBookId(2L);
+        createBorrowedBookDto.setUserId(1L);
         createBorrowedBookDto.setReturnDate(ZonedDateTime.of(LocalDateTime.of(2023, 1, 1, 0, 0), ZoneId.of("UTC")));
         return createBorrowedBookDto;
     }
