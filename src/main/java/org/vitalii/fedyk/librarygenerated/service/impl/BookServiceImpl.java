@@ -53,6 +53,8 @@ public class BookServiceImpl implements BookService {
                 .orElseThrow(() -> new NotFoundException(BOOK_NOT_FOUND_BY_ID.formatted(id)));
         book.setTitle(createBookDto.getTitle());
         book.setDescription(createBookDto.getDescription());
+        book.setGenre(createBookDto.getGenre());
+        book.setPagesCount(createBookDto.getPagesCount().shortValue());
         if(!book.getAuthor().getId().equals(createBookDto.getAuthorId())) {
             final Author author = authorRepository.findById(createBookDto.getAuthorId())
                     .orElseThrow(() -> new NotFoundException(ExceptionConstants.AUTHOR_NOT_FOUND_BY_ID

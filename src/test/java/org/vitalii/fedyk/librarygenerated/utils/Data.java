@@ -45,6 +45,24 @@ public class Data {
                 .description("Description");
     }
 
+    public static CreateBookDto getCreateBookDto() {
+        return new CreateBookDto()
+                .title("Title of the book")
+                .description("Description of the book")
+                .pagesCount(459)
+                .authorId(10L)
+                .genre(BookGenreDto.FANTASY);
+    }
+
+    public static CreateBookDto getCreateBookDtoForUpdate() {
+        return new CreateBookDto()
+                .title("Updated")
+                .description("Updated description")
+                .pagesCount(1000)
+                .authorId(11L)
+                .genre(BookGenreDto.BIOGRAPHY);
+    }
+
     public static CreateBookDto getCreateBookDto(Long authorId) {
         CreateBookDto createBookDto = new CreateBookDto();
         createBookDto.setTitle("Title");
