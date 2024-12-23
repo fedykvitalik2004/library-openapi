@@ -27,8 +27,8 @@ public class GlobalExceptionHandler {
         return getExceptionMessageDto(e);
     }
 
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+    @ExceptionHandler(OperationNotPermittedException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
     public ExceptionMessageDto handleMethodNotAllowed(RuntimeException e) {
         return getExceptionMessageDto(e);
     }
