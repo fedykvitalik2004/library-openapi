@@ -11,6 +11,7 @@ import org.vitalii.fedyk.librarygenerated.service.BorrowedBookService;
 @AllArgsConstructor
 public class BorrowedBookController implements BorrowedBooksApi {
     private BorrowedBookService borrowedBookService;
+
     @Override
     public ReadBorrowedBookDto addBorrowedBook(CreateBorrowedBookDto createBorrowedBookDto) {
         return borrowedBookService.add(createBorrowedBookDto);
