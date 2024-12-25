@@ -1,62 +1,44 @@
 package org.vitalii.fedyk.librarygenerated.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.vitalii.fedyk.librarygenerated.api.dto.CreateBorrowedBookDto;
-import org.vitalii.fedyk.librarygenerated.model.BorrowedBookId;
 import org.vitalii.fedyk.librarygenerated.repository.BorrowedBookRepository;
-import org.vitalii.fedyk.librarygenerated.service.BorrowedBookService;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.time.ZonedDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.vitalii.fedyk.librarygenerated.utils.Data.getCreateBorrowedBookDto;
 
 @SpringBootTest
-@TestPropertySource("/application-test.properties")
+@ActiveProfiles("test")
 @AutoConfigureMockMvc
+@Transactional
 class BorrowedBookControllerTest {
     @Autowired
     private MockMvc mockMvc;
     @Autowired
-    private BorrowedBookService borrowedBookService;
-    @Autowired
     private BorrowedBookRepository borrowedBookRepository;
     @Autowired
     private ObjectMapper objectMapper;
-    private final String partOfUrl = "/borrowed-books";
-    private final String pathForRemovingData = "src/main/resources/removal.sql";
-    private CreateBorrowedBookDto createBorrowedBookDto;
-    private final long bookId = 10L;
-    private final long userId = 10L;
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
-    @BeforeEach
-    void clear() {
-        createBorrowedBookDto = getCreateBorrowedBookDto();
-    }
 
     @Test
     @Sql("/data.sql")
     void testDelete_Success() throws Exception {
+        final long bookId = 1L;
+        final long userId = 1L;
         final int borrowedBooksBefore = borrowedBookRepository.findAll().size();
-        mockMvc.perform(delete(partOfUrl + "/{bookId}/{userId}", bookId, userId))
+        mockMvc.perform(delete("/borrowed-books/{bookId}/{userId}", bookId, userId))
                 .andExpect(status().isNoContent());
         final int borrowedBooksAfter = borrowedBookRepository.findAll().size();
         assertEquals(1, borrowedBooksBefore - borrowedBooksAfter);
@@ -64,35 +46,40 @@ class BorrowedBookControllerTest {
 
     @Test
     void testDelete_NonExistentBook() throws Exception {
-        mockMvc.perform(delete(partOfUrl + "/{bookId}/{userId}", 200L, userId))
+        final long booksBefore = borrowedBookRepository.count();
+        mockMvc.perform(delete("/borrowed-books/{bookId}/{userId}", 1000L, 1L))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+        final long booksAfter = borrowedBookRepository.count();
+        assertEquals(booksBefore, booksAfter);
     }
 
     @Test
     void testDelete_NonExistentUser() throws Exception {
-        mockMvc.perform(delete(partOfUrl + "/{bookId}/{userId}", bookId, 200L))
+        final long booksBefore = borrowedBookRepository.count();
+        mockMvc.perform(delete("/borrowed-books/{bookId}/{userId}", 1L, 1000L))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+        final long booksAfter = borrowedBookRepository.count();
+        assertEquals(booksBefore, booksAfter);
     }
 
     @Test
     @Sql("/data.sql")
     void testAddBorrowedBook_Success() throws Exception {
-        assertFalse(borrowedBookRepository.existsById(new BorrowedBookId(11L, userId)));
-        createBorrowedBookDto.setBookId(11L);
-        createBorrowedBookDto.setUserId(userId);
-        mockMvc.perform(post(partOfUrl)
+        final long borrowedBooksBefore = borrowedBookRepository.count();
+        final CreateBorrowedBookDto createBorrowedBookDto = new CreateBorrowedBookDto();
+        createBorrowedBookDto.setBookId(2L);
+        createBorrowedBookDto.setUserId(1L);
+        createBorrowedBookDto.setReturnDate(ZonedDateTime.now().plusDays(100));
+
+        mockMvc.perform(post("/borrowed-books")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createBorrowedBookDto)))
                 .andExpect(status().isCreated())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
-        assertTrue(borrowedBookRepository.existsById(new BorrowedBookId(bookId, userId)));
-    }
 
-    @AfterEach
-    void deleteDataInDatabase() throws IOException {
-        final String sql = new String(Files.readAllBytes(Path.of(pathForRemovingData)));
-        jdbcTemplate.execute(sql);
+        final long borrowedBooksAfter = borrowedBookRepository.count();
+        assertEquals(1, borrowedBooksAfter - borrowedBooksBefore);
     }
 }

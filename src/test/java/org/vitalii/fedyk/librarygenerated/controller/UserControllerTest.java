@@ -1,80 +1,81 @@
 package org.vitalii.fedyk.librarygenerated.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.vitalii.fedyk.librarygenerated.api.dto.CreateUserDto;
+import org.vitalii.fedyk.librarygenerated.api.dto.FullNameDto;
+import org.vitalii.fedyk.librarygenerated.model.User;
+import org.vitalii.fedyk.librarygenerated.repository.BookRepository;
 import org.vitalii.fedyk.librarygenerated.repository.BorrowedBookRepository;
 import org.vitalii.fedyk.librarygenerated.repository.UserRepository;
-import org.vitalii.fedyk.librarygenerated.service.UserService;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.time.LocalDate;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.vitalii.fedyk.librarygenerated.utils.Data.getCreateUserDto;
 
 @SpringBootTest
-@TestPropertySource("/application-test.properties")
+@ActiveProfiles("test")
 @AutoConfigureMockMvc
+@Transactional
 class UserControllerTest {
-    @Autowired
-    private UserService userService;
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
     @Autowired
     private MockMvc mockMvc;
     @Autowired
     private ObjectMapper objectMapper;
     @Autowired
     private BorrowedBookRepository borrowedBookRepository;
-    private final String partOfUrl = "/users";
-    private final String pathForRemovingData = "src/main/resources/removal.sql";
-    private final long existentUserId = 10L;
-    private final long nonExistentUserId = 200L;
-    private CreateUserDto createUserDto;
     @Autowired
     private UserRepository userRepository;
-
-    @BeforeEach
-    void clear() {
-        createUserDto = getCreateUserDto();
-    }
+    @Autowired
+    private BookRepository bookRepository;
 
     @Test
     @Sql("/data.sql")
     void testGetUsers_Success() throws Exception {
-        mockMvc.perform(get(partOfUrl))
+        final long userId = 1L;
+        final User user = userRepository.findById(userId).orElseThrow();
+        mockMvc.perform(get("/users"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.users[0].id").value(existentUserId));
+                .andExpect(jsonPath("$.users[0].id").value(user.getId()))
+                .andExpect(jsonPath("$.users[0].fullName.firstName").value(user.getFullName().getFirstName()))
+                .andExpect(jsonPath("$.users[0].fullName.lastName").value(user.getFullName().getLastName()))
+                .andExpect(jsonPath("$.users[0].email").value(user.getEmail()))
+                .andExpect(jsonPath("$.users[0].birthday").value(user.getBirthday().toString()));
     }
 
     @Test
     @Sql("/data.sql")
     void testGetUserById_Success() throws Exception {
-        mockMvc.perform(get(partOfUrl + "/{userId}", existentUserId))
+        final long userId = 1L;
+        final User user = userRepository.findById(userId).orElseThrow();
+
+        mockMvc.perform(get("/users/{userId}", userId))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(existentUserId));
+                .andExpect(jsonPath("$.id").value(user.getId()))
+                .andExpect(jsonPath("$.fullName.firstName").value(user.getFullName().getFirstName()))
+                .andExpect(jsonPath("$.fullName.lastName").value(user.getFullName().getLastName()))
+                .andExpect(jsonPath("$.email").value(user.getEmail()))
+                .andExpect(jsonPath("$.birthday").value(user.getBirthday().toString()));
     }
 
     @Test
     @Sql("/data.sql")
     void testGetUserById_NotFound() throws Exception {
-        mockMvc.perform(get(partOfUrl + "/{userId}", nonExistentUserId))
+        final long userId = 1000L;
+        assertFalse(userRepository.existsById(userId));
+        mockMvc.perform(get("/users/{userId}", userId))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
@@ -82,14 +83,18 @@ class UserControllerTest {
     @Test
     @Sql("/data.sql")
     void testDeleteUser_NotFound() throws Exception {
-        mockMvc.perform(delete(partOfUrl + "/{userId}", nonExistentUserId))
+        final long userId = 1000L;
+        assertFalse(userRepository.existsById(userId));
+        mockMvc.perform(delete("/users/{userId}", userId))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
 
     @Test
+    @Sql("/data.sql")
     void testDeleteUser_Success() throws Exception {
-        mockMvc.perform(delete(partOfUrl + "/{userId}", existentUserId))
+        final long userId = 2L;
+        mockMvc.perform(delete("/users/{userId}", userId))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
@@ -97,7 +102,8 @@ class UserControllerTest {
     @Test
     @Sql("/data.sql")
     void testDeleteUser_Conflict() throws Exception {
-        mockMvc.perform(delete(partOfUrl + "/{userId}", existentUserId))
+        final long userId = 1L;
+        mockMvc.perform(delete("/users/{userId}", userId))
                 .andExpect(status().isConflict())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
@@ -105,23 +111,36 @@ class UserControllerTest {
     @Test
     @Sql("/data.sql")
     void testFindBorrowedBooks_Success() throws Exception {
-        mockMvc.perform(get(partOfUrl + "/{userId}" + "/borrowed-books", existentUserId))
+        final long userId = 1L;
+        final long authorId = 1L;
+
+        final long number = borrowedBookRepository.findByUserId(userId).size();
+
+        mockMvc.perform(get("/users/{userId}/borrowed-books", userId))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$[0].book.id").value(10));
+                .andExpect(jsonPath("$.length()").value(number));
     }
 
     @Test
     void testFindBorrowedBooks_EmptySuccessfulResult() throws Exception {
-        mockMvc.perform(get(partOfUrl + "/{userId}" + "/borrowed-books", nonExistentUserId))
+        final long userId = 2L;
+        final long number = borrowedBookRepository.findByUserId(userId).size();
+        mockMvc.perform(get("/users/{userId}" + "/borrowed-books", userId))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.length()").value(number));
     }
 
     @Test
     void testCreateUser_Success() throws Exception {
-        final long elementsBefore = userRepository.findAll().size();
-        mockMvc.perform(post(partOfUrl)
+        final CreateUserDto createUserDto = new CreateUserDto();
+        createUserDto.setFullName(new FullNameDto("Janet", "Doe"));
+        createUserDto.setEmail("janetdoe@email.com");
+        createUserDto.setPassword("Password");
+        createUserDto.setBirthday(LocalDate.of(2000, 1, 1));
+        final long elementsBefore = userRepository.count();
+        mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createUserDto)))
                 .andExpect(status().isOk())
@@ -132,8 +151,8 @@ class UserControllerTest {
 
     @Test
     void testCreateUser_EmptyNecessaryField() throws Exception {
-        createUserDto.setEmail(null);
-        mockMvc.perform(post(partOfUrl)
+        final CreateUserDto createUserDto = new CreateUserDto();
+        mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createUserDto)))
                 .andExpect(status().isBadRequest())
@@ -143,8 +162,13 @@ class UserControllerTest {
     @Test
     @Sql("/data.sql")
     void testCreateUser_EmailUsed() throws Exception {
+        final CreateUserDto createUserDto = new CreateUserDto();
+        createUserDto.setFullName(new FullNameDto("Janet", "Doe"));
         createUserDto.setEmail("jane_doe@email.com");
-        mockMvc.perform(post(partOfUrl)
+        createUserDto.setPassword("Password");
+        createUserDto.setBirthday(LocalDate.of(2000, 12, 12));
+        assertTrue(userRepository.existsByEmail(createUserDto.getEmail()));
+        mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createUserDto)))
                 .andExpect(status().isConflict())
@@ -154,8 +178,13 @@ class UserControllerTest {
     @Test
     @Sql("/data.sql")
     void testUpdateUser_NotFound() throws Exception {
-        createUserDto.setEmail("email@gmail.comm");
-        mockMvc.perform(put(partOfUrl + "/{userId}", nonExistentUserId)
+        final long userId = 1000L;
+        final CreateUserDto createUserDto = new CreateUserDto();
+        createUserDto.setFullName(new FullNameDto("Janet", "Doe"));
+        createUserDto.setEmail("janedoe@email.com");
+        createUserDto.setPassword("Password");
+        createUserDto.setBirthday(LocalDate.of(2000, 12, 12));
+        mockMvc.perform(put("/users/{userId}", userId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createUserDto)))
                 .andExpect(status().isNotFound())
@@ -165,8 +194,8 @@ class UserControllerTest {
     @Test
     @Sql("/data.sql")
     void testUpdateUser_BadRequest() throws Exception {
-        createUserDto.setEmail(null);
-        mockMvc.perform(put(partOfUrl + "/{userId}", nonExistentUserId)
+        final CreateUserDto createUserDto = new CreateUserDto();
+        mockMvc.perform(put("/users/{userId}", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createUserDto)))
                 .andExpect(status().isBadRequest())
@@ -176,7 +205,13 @@ class UserControllerTest {
     @Test
     @Sql("/data.sql")
     void testUpdateUser_Success() throws Exception {
-        mockMvc.perform(put(partOfUrl + "/{userId}", existentUserId)
+        final long userId = 1L;
+        final CreateUserDto createUserDto = new CreateUserDto();
+        createUserDto.setFullName(new FullNameDto("Janet", "Doe"));
+        createUserDto.setEmail("janedoe@email.com");
+        createUserDto.setPassword("Password");
+        createUserDto.setBirthday(LocalDate.of(2000, 1, 1));
+        mockMvc.perform(put("/users/{userId}", userId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createUserDto)))
                 .andExpect(status().isOk())
@@ -185,11 +220,5 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.fullName.lastName").value(createUserDto.getFullName().getLastName()))
                 .andExpect(jsonPath("$.email").value(createUserDto.getEmail()))
                 .andExpect(jsonPath("$.birthday").value(createUserDto.getBirthday().toString()));
-    }
-
-    @AfterEach
-    void deleteDataInDatabase() throws IOException {
-        final String sql = new String(Files.readAllBytes(Path.of(pathForRemovingData)));
-        jdbcTemplate.execute(sql);
     }
 }

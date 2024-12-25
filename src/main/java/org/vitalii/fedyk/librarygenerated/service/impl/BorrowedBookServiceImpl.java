@@ -37,9 +37,10 @@ public class BorrowedBookServiceImpl implements BorrowedBookService {
         }
         final BorrowedBook borrowedBook = borrowedBookMapper.toBorrowedBook(createBorrowedBookDto);
         final Book book = bookRepository.findById(createBorrowedBookDto.getBookId())
-                .orElseThrow(() -> new NotFoundException(BOOK_NOT_FOUND_BY_ID.formatted(createBorrowedBookDto.getBookId())));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        BOOK_NOT_FOUND_BY_ID.formatted(createBorrowedBookDto.getBookId())));
         if (!userRepository.existsById(createBorrowedBookDto.getUserId())) {
-            throw new NotFoundException(USER_NOT_FOUND_BY_ID);
+            throw new IllegalArgumentException(USER_NOT_FOUND_BY_ID);
         }
         borrowedBook.setBorrowDate(ZonedDateTime.now());
         return borrowedBookMapper.toBorrowedBookDto(borrowedBookRepository.save(borrowedBook), book);
@@ -47,12 +48,12 @@ public class BorrowedBookServiceImpl implements BorrowedBookService {
 
     @Override
     public boolean isBorrowedByUser(final Long userId) {
-        return borrowedBookRepository.existsByUserId(userId);
+        return borrowedBookRepository.existsByBorrowedBookIdUserId(userId);
     }
 
     @Override
     public boolean isBorrowedByBook(final Long bookId) {
-        return borrowedBookRepository.existsByBookId(bookId);
+        return borrowedBookRepository.existsByBorrowedBookIdBookId(bookId);
     }
 
     @Override
@@ -67,7 +68,7 @@ public class BorrowedBookServiceImpl implements BorrowedBookService {
         final List<BorrowedBook> borrowedBooks = borrowedBookRepository.findByUserId(userId)
                 .stream().toList();
         final List<Book> books = bookRepository.findAllByIds(borrowedBooks.stream()
-                .map(BorrowedBook::getBookId).toList());
+                .map(book -> book.getBorrowedBookId().getBookId()).toList());
         final List<ReadBorrowedBookDto> readBorrowedBooks= new ArrayList<>();
         for ( int i = 0; i < borrowedBooks.size(); i++ ) {
             readBorrowedBooks.add(borrowedBookMapper.toBorrowedBookDto(borrowedBooks.get(i), books.get(i)));

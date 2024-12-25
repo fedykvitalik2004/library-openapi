@@ -1,83 +1,74 @@
 package org.vitalii.fedyk.librarygenerated.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.vitalii.fedyk.librarygenerated.api.dto.CreateAuthorDto;
+import org.vitalii.fedyk.librarygenerated.api.dto.FullNameDto;
+import org.vitalii.fedyk.librarygenerated.model.Author;
 import org.vitalii.fedyk.librarygenerated.repository.AuthorRepository;
-import org.vitalii.fedyk.librarygenerated.service.AuthorService;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.vitalii.fedyk.librarygenerated.utils.Data.getCreateAuthorDto;
 
 @SpringBootTest
-@TestPropertySource("/application-test.properties")
+@ActiveProfiles("test")
 @AutoConfigureMockMvc
+@Transactional
 class AuthorControllerTest {
     @Autowired
     private MockMvc mockMvc;
     @Autowired
-    private AuthorService authorService;
-    @Autowired
     private AuthorRepository authorRepository;
     @Autowired
     private ObjectMapper objectMapper;
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-    private final String pathOfUrl = "/authors";
-    private final String pathForRemovingData = "src/main/resources/removal.sql";
-    private final long existingReferencedAuthorId = 10L;
-    private final long existingNotReferencedAuthorId = 11L;
-    private CreateAuthorDto createAuthorDto;
-
-    @BeforeEach
-    void clear() {
-        createAuthorDto = getCreateAuthorDto();
-    }
 
     @Test
     @Sql("/data.sql")
     void testDeleteAuthor_OperationNotPermitted() throws Exception {
-        mockMvc.perform(delete(pathOfUrl + "/{authorId}", existingReferencedAuthorId))
+        final long userId = 1L;
+        mockMvc.perform(delete("/users/{authorId}", userId))
                 .andExpect(status().isConflict());
-        assertTrue(authorRepository.findById(existingReferencedAuthorId).isPresent());
+        assertTrue(authorRepository.findById(userId).isPresent());
     }
 
     @Test
     @Sql("/data.sql")
     void testDeleteAuthor_Success() throws Exception {
-        mockMvc.perform(delete(pathOfUrl + "/{authorId}", existingNotReferencedAuthorId))
+        final long authorId = 2L;
+        mockMvc.perform(delete("/authors/{authorId}", authorId))
                 .andExpect(status().isNoContent());
-        assertTrue(authorRepository.findById(existingNotReferencedAuthorId).isEmpty());
+        assertTrue(authorRepository.findById(authorId).isEmpty());
     }
 
     @Test
     @Sql("/data.sql")
-    void testDeleteAuthor_NotFound() throws Exception {
-        mockMvc.perform(delete(pathOfUrl + "/{authorId}", 100L))
+    void testDeleteAuthor_Conflict() throws Exception {
+        final long authorId = 1L;
+        mockMvc.perform(delete("/authors/{authorId}", authorId))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    @Sql("/data.sql")
+    void testDeleteAuthor_NoFound() throws Exception {
+        final long authorId = 1000L;
+        mockMvc.perform(delete("/authors/{authorId}", authorId))
                 .andExpect(status().isNotFound());
-        assertFalse(authorRepository.findById(existingNotReferencedAuthorId).isEmpty());
+        assertTrue(authorRepository.findById(authorId).isEmpty());
     }
 
     @Test
     void testGetAuthorById_NotFound() throws Exception {
-        mockMvc.perform(get(pathOfUrl + "/{authorId}", 100L))
+        mockMvc.perform(get("/authors/{authorId}", 100L))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
@@ -85,39 +76,48 @@ class AuthorControllerTest {
     @Test
     @Sql("/data.sql")
     void testGetAuthorById_Success() throws Exception {
-        mockMvc.perform(get(pathOfUrl + "/{authorId}", existingReferencedAuthorId))
+        final long authorId = 1L;
+        final Author author = authorRepository.findById(authorId).orElseThrow();
+        mockMvc.perform(get("/authors/{authorId}", authorId))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(existingReferencedAuthorId));
+                .andExpect(jsonPath("$.id").value(author.getId()))
+                .andExpect(jsonPath("$.description").value(author.getDescription()))
+                .andExpect(jsonPath("$.fullName.firstName").value(author.getFullName().getFirstName()))
+                .andExpect(jsonPath("$.fullName.lastName").value(author.getFullName().getLastName()));
     }
 
     @Test
     @Sql("/data.sql")
     void testGetAllAuthors_Success() throws Exception {
-        mockMvc.perform(get(pathOfUrl))
+        mockMvc.perform(get("/authors"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.authors[0].id").value(existingReferencedAuthorId));
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
 
     @Test
     @Sql("/data.sql")
     void testCreateAuthor_Success() throws Exception {
         final long elementsBefore = authorRepository.findAll().size();
-        mockMvc.perform(post(pathOfUrl)
+        final CreateAuthorDto createAuthorDto = new CreateAuthorDto();
+        createAuthorDto.setFullName(new FullNameDto("Janet", "Doe"));
+        createAuthorDto.setDescription("Description for Jannet");
+        mockMvc.perform(post("/authors")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createAuthorDto)))
                 .andExpect(status().isCreated())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
         final long elementsAfter = authorRepository.findAll().size();
-        assertTrue(elementsAfter - elementsBefore == 1);
+        assertEquals(1, elementsAfter - elementsBefore);
     }
 
     @Test
     @Sql("/data.sql")
     void testCreateAuthor_BadRequest() throws Exception {
+        final CreateAuthorDto createAuthorDto = new CreateAuthorDto();
         createAuthorDto.setFullName(null);
-        mockMvc.perform(post(pathOfUrl)
+
+        mockMvc.perform(post("/authors")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createAuthorDto)))
                 .andExpect(status().isBadRequest())
@@ -127,7 +127,11 @@ class AuthorControllerTest {
     @Test
     @Sql("/data.sql")
     void testUpdateAuthor_NotFound() throws Exception {
-        mockMvc.perform(put(pathOfUrl + "/{authorId}", 300L)
+        final CreateAuthorDto createAuthorDto = new CreateAuthorDto();
+        createAuthorDto.setFullName(new FullNameDto("ChangedFirstName", "ChangedLastName"));
+        createAuthorDto.setDescription("Changed");
+
+        mockMvc.perform(put("/authors/{authorId}", 1000L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createAuthorDto)))
                 .andExpect(status().isNotFound())
@@ -137,8 +141,10 @@ class AuthorControllerTest {
     @Test
     @Sql("/data.sql")
     void testUpdateAuthor_BadRequest() throws Exception {
-        createAuthorDto.setFullName(null);
-        mockMvc.perform(put(pathOfUrl + "/{authorId}", 300L)
+        final CreateAuthorDto createAuthorDto = new CreateAuthorDto();
+        createAuthorDto.setDescription("Changed");
+
+        mockMvc.perform(put("/authors/{authorId}", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createAuthorDto)))
                 .andExpect(status().isBadRequest())
@@ -148,16 +154,20 @@ class AuthorControllerTest {
     @Test
     @Sql("/data.sql")
     void testUpdateAuthor_Success() throws Exception {
-        mockMvc.perform(put(pathOfUrl + "/{authorId}", existingReferencedAuthorId)
+        final long authorId = 1L;
+        final CreateAuthorDto createAuthorDto = new CreateAuthorDto();
+        createAuthorDto.setFullName(new FullNameDto("ChangedFirstName", "ChangedLastName"));
+        createAuthorDto.setDescription("Changed");
+
+        mockMvc.perform(put("/authors/{authorId}", authorId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createAuthorDto)))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
-    }
 
-    @AfterEach
-    void deleteDataInDatabase() throws IOException {
-        final String sql = new String(Files.readAllBytes(Path.of(pathForRemovingData)));
-        jdbcTemplate.execute(sql);
+        final Author author = authorRepository.findById(authorId).orElseThrow();
+        assertEquals(createAuthorDto.getFullName().getFirstName(), author.getFullName().getFirstName());
+        assertEquals(createAuthorDto.getFullName().getLastName(), author.getFullName().getLastName());
+        assertEquals(createAuthorDto.getDescription(), author.getDescription());
     }
 }

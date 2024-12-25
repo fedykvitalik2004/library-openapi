@@ -1,6 +1,5 @@
 package org.vitalii.fedyk.librarygenerated.service;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -8,48 +7,37 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.vitalii.fedyk.librarygenerated.api.dto.CreateAuthorDto;
-import org.vitalii.fedyk.librarygenerated.api.dto.FullNameDto;
-import org.vitalii.fedyk.librarygenerated.api.dto.ReadAuthorDto;
-import org.vitalii.fedyk.librarygenerated.api.dto.ReadAuthorsDto;
+import org.vitalii.fedyk.librarygenerated.api.dto.*;
+import org.vitalii.fedyk.librarygenerated.enumeraton.BookGenre;
 import org.vitalii.fedyk.librarygenerated.exception.NotFoundException;
 import org.vitalii.fedyk.librarygenerated.exception.OperationNotPermittedException;
-import org.vitalii.fedyk.librarygenerated.mapper.AuthorMapper;
 import org.vitalii.fedyk.librarygenerated.model.Author;
+import org.vitalii.fedyk.librarygenerated.model.Book;
+import org.vitalii.fedyk.librarygenerated.model.FullName;
 import org.vitalii.fedyk.librarygenerated.repository.AuthorRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-import static org.vitalii.fedyk.librarygenerated.utils.Data.*;
 
 @SpringBootTest
-@TestPropertySource("/application-test.properties")
+@ActiveProfiles("test")
 class AuthorServiceImplTest {
     @Autowired
     private AuthorService authorService;
-    @Autowired
-    private AuthorMapper authorMapper;
     @MockitoBean
     private AuthorRepository authorRepository;
     @MockitoBean
     private BookService bookService;
-    private final long authorId = 1L;
-    private Author author;
-    private CreateAuthorDto createAuthorDto;
-
-    @BeforeEach
-    void clear() {
-        author = getAuthor();
-        createAuthorDto = getCreateAuthorDto();
-    }
 
     @Test
     void testReadAuthor_AuthorNotFound() {
+        final long authorId = 1L;
         when(authorRepository.findById(authorId)).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> authorService.readAuthor(authorId));
@@ -59,20 +47,25 @@ class AuthorServiceImplTest {
 
     @Test
     void testReadAuthor_SuccessfulRetrieval() {
+        final long authorId = 1L;
+        final Author author = new Author(authorId, new FullName("Jane", "Doe"), "Description", new ArrayList<>());
+        final Book book = new Book(2L, "Title", "Description", BookGenre.BIOGRAPHY, 120, author);
+        author.getBooks().add(book);
         when(authorRepository.findById(authorId)).thenReturn(Optional.of(author));
 
         final ReadAuthorDto result = authorService.readAuthor(authorId);
 
         assertNotNull(result);
-        assertEquals(authorId, result.getId());
-        assertEquals("John", author.getFullName().getFirstName());
-        assertEquals("Doe", author.getFullName().getLastName());
+        assertEquals(author.getId(), result.getId());
+        assertEquals(author.getFullName().getFirstName(), result.getFullName().getFirstName());
+        assertEquals(author.getFullName().getLastName(), result.getFullName().getLastName());
 
         verify(authorRepository).findById(authorId);
     }
 
     @Test
     void testDeleteAuthor_AuthorNotFound() {
+        final long authorId = 1L;
         when(authorRepository.existsById(authorId)).thenReturn(false);
 
         assertThrows(NotFoundException.class, () -> authorService.deleteAuthor(authorId));
@@ -83,6 +76,7 @@ class AuthorServiceImplTest {
 
     @Test
     void testDeleteAuthor_AuthorHasBooks() {
+        final long authorId = 1L;
         when(authorRepository.existsById(authorId)).thenReturn(true);
         when(bookService.authorHasBooks(authorId)).thenReturn(true);
 
@@ -95,6 +89,7 @@ class AuthorServiceImplTest {
 
     @Test
     void testDeleteAuthor_SuccessfulDeletion() {
+        final long authorId = 1L;
         when(authorRepository.existsById(authorId)).thenReturn(true);
         when(bookService.authorHasBooks(authorId)).thenReturn(false);
 
@@ -107,6 +102,10 @@ class AuthorServiceImplTest {
 
     @Test
     void testFindAll_AuthorsFound() {
+        final long authorId = 1L;
+        final Author author = new Author(authorId, new FullName("Jane", "Doe"), "Description", new ArrayList<>());
+        final Book book = new Book(2L, "Title", "Description", BookGenre.BIOGRAPHY, 120, author);
+        author.getBooks().add(book);
         final Page<Author> authorsPage = new PageImpl<>(List.of(author));
         final Pageable pageable = PageRequest.of(0, 1);
         when(authorRepository.findAll(pageable)).thenReturn(authorsPage);
@@ -115,10 +114,10 @@ class AuthorServiceImplTest {
 
         final ReadAuthorDto element = result.getAuthors().get(0);
         assertNotNull(result);
-        assertEquals(1, result.getAuthors().size());
-        assertEquals("John", element.getFullName().getFirstName());
-        assertEquals("Doe", element.getFullName().getLastName());
-        assertEquals("Description", element.getDescription());
+        assertEquals(author.getId(), result.getAuthors().size());
+        assertEquals(author.getFullName().getFirstName(), element.getFullName().getFirstName());
+        assertEquals(author.getFullName().getLastName(), element.getFullName().getLastName());
+        assertEquals(author.getDescription(), element.getDescription());
 
         verify(authorRepository).findAll(pageable);
     }
@@ -139,21 +138,32 @@ class AuthorServiceImplTest {
 
     @Test
     void testCreateAuthor_SuccessfulCreation() {
+        final long authorId = 1L;
+        final Author author = new Author(authorId, new FullName("Jane", "Doe"), "Description", new ArrayList<>());
+        final Book book = new Book(2L, "Title", "Description", BookGenre.BIOGRAPHY, 120, author);
+        author.getBooks().add(book);
+        final CreateAuthorDto createAuthorDto = new CreateAuthorDto(new FullNameDto("Jane", "Doe"));
+        createAuthorDto.setDescription("Description");
+
         when(authorRepository.save(any(Author.class))).thenReturn(author);
 
         final ReadAuthorDto result = authorService.createAuthor(createAuthorDto);
 
         assertNotNull(result);
-        assertEquals(1L, result.getId());
-        assertEquals("John", result.getFullName().getFirstName());
-        assertEquals("Doe", result.getFullName().getLastName());
-        assertEquals("Description", result.getDescription());
+        assertEquals(author.getId(), result.getId());
+        assertEquals(author.getFullName().getFirstName(), result.getFullName().getFirstName());
+        assertEquals(author.getFullName().getLastName(), result.getFullName().getLastName());
+        assertEquals(author.getDescription(), result.getDescription());
 
         verify(authorRepository).save(any(Author.class));
     }
 
     @Test
     void testUpdateAuthor_AuthorNotFound() {
+        final long authorId = 1L;
+        final CreateAuthorDto createAuthorDto = new CreateAuthorDto(new FullNameDto("Jane", "Doe"));
+        createAuthorDto.setDescription("Description");
+
         when(authorRepository.findById(authorId)).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> authorService.updateAuthor(authorId, createAuthorDto));
@@ -164,17 +174,22 @@ class AuthorServiceImplTest {
 
     @Test
     void testUpdateAuthor_SuccessfulUpdate() {
+        final long authorId = 1L;
+        final Author author = new Author(authorId, new FullName("Jane", "Doe"), "Description", new ArrayList<>());
+        final Book book = new Book(2L, "Title", "Description", BookGenre.BIOGRAPHY, 120, author);
+        author.getBooks().add(book);
+        final CreateAuthorDto createAuthorDto = new CreateAuthorDto();
         createAuthorDto.setFullName(new FullNameDto("Jane", "Do"));
         createAuthorDto.setDescription("Changed");
+
         when(authorRepository.findById(authorId)).thenReturn(Optional.of(author));
         when(authorRepository.save(any(Author.class))).thenReturn(author);
 
         final ReadAuthorDto result = authorService.updateAuthor(authorId, createAuthorDto);
 
         assertNotNull(result);
-        assertEquals("Jane", author.getFullName().getFirstName());
-        assertEquals("Do", author.getFullName().getLastName());
-        assertEquals("Changed", author.getDescription());
+        assertEquals(createAuthorDto.getFullName(), result.getFullName());
+        assertEquals(createAuthorDto.getDescription(), result.getDescription());
 
         verify(authorRepository).findById(authorId);
         verify(authorRepository).save(any(Author.class));

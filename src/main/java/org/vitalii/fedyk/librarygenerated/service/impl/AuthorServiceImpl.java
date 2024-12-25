@@ -8,6 +8,7 @@ import org.vitalii.fedyk.librarygenerated.exception.NotFoundException;
 import org.vitalii.fedyk.librarygenerated.exception.OperationNotPermittedException;
 import org.vitalii.fedyk.librarygenerated.mapper.AuthorMapper;
 import org.vitalii.fedyk.librarygenerated.model.Author;
+import org.vitalii.fedyk.librarygenerated.model.FullName;
 import org.vitalii.fedyk.librarygenerated.repository.AuthorRepository;
 import org.vitalii.fedyk.librarygenerated.service.AuthorService;
 
@@ -45,15 +46,15 @@ public class AuthorServiceImpl implements AuthorService {
     public ReadAuthorDto updateAuthor(final Long id, final CreateAuthorDto createAuthorDto) {
         final Author author = authorRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(AUTHOR_NOT_FOUND_BY_ID.formatted(id)));
-        author.setFullName(createAuthorDto.getFullName());
+        author.setFullName(new FullName(createAuthorDto.getFullName().getFirstName(),
+                createAuthorDto.getFullName().getLastName()));
         author.setDescription(createAuthorDto.getDescription());
         return authorMapper.toReadAuthorDto(authorRepository.save(author));
     }
 
     @Override
     public void deleteAuthor(final Long id) {
-        final boolean authorExists = authorRepository.existsById(id);
-        if (!authorExists) {
+        if (!authorRepository.existsById(id)) {
             throw new NotFoundException(AUTHOR_NOT_FOUND_BY_ID.formatted(id));
         }
         if (bookService.authorHasBooks(id)) {

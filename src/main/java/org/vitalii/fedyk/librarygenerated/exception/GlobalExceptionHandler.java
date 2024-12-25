@@ -48,6 +48,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ExceptionMessageDto handleIllegalArgumentException(RuntimeException e) {
         return getExceptionMessageDto(e);
     }

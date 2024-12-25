@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.vitalii.fedyk.librarygenerated.api.dto.CreateBookDto;
 import org.vitalii.fedyk.librarygenerated.api.dto.ReadBookDto;
 import org.vitalii.fedyk.librarygenerated.constant.ExceptionConstants;
+import org.vitalii.fedyk.librarygenerated.enumeraton.BookGenre;
 import org.vitalii.fedyk.librarygenerated.exception.NotFoundException;
 import org.vitalii.fedyk.librarygenerated.exception.OperationNotPermittedException;
 import org.vitalii.fedyk.librarygenerated.mapper.BookMapper;
@@ -34,7 +35,7 @@ public class BookServiceImpl implements BookService {
     @Override
     public ReadBookDto createBook(final CreateBookDto createBookDto) {
         final Author author = authorRepository.findById(createBookDto.getAuthorId())
-                .orElseThrow(() -> new NotFoundException(ExceptionConstants.AUTHOR_NOT_FOUND_BY_ID
+                .orElseThrow(() -> new IllegalArgumentException(ExceptionConstants.AUTHOR_NOT_FOUND_BY_ID
                         .formatted(createBookDto.getAuthorId())));
         Book book = bookMapper.toBook(createBookDto);
         book.setAuthor(author);
@@ -53,11 +54,11 @@ public class BookServiceImpl implements BookService {
                 .orElseThrow(() -> new NotFoundException(BOOK_NOT_FOUND_BY_ID.formatted(id)));
         book.setTitle(createBookDto.getTitle());
         book.setDescription(createBookDto.getDescription());
-        book.setGenre(createBookDto.getGenre());
-        book.setPagesCount(createBookDto.getPagesCount().shortValue());
+        book.setGenre(BookGenre.valueOf(createBookDto.getGenre().getValue()));
+        book.setPagesCount(createBookDto.getPagesCount());
         if(!book.getAuthor().getId().equals(createBookDto.getAuthorId())) {
             final Author author = authorRepository.findById(createBookDto.getAuthorId())
-                    .orElseThrow(() -> new NotFoundException(ExceptionConstants.AUTHOR_NOT_FOUND_BY_ID
+                    .orElseThrow(() -> new IllegalArgumentException(ExceptionConstants.AUTHOR_NOT_FOUND_BY_ID
                             .formatted(createBookDto.getAuthorId())));
             book.setAuthor(author);
         }
